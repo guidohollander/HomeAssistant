@@ -1,0 +1,47 @@
+  - name: netflix
+    entities:      
+      light.woonkamer:
+        state: on
+        brightness: 60
+        color_temp: 443
+        transition: 2
+      light.schemerlamp:
+        state: on
+        brightness: 60
+        color_temp: 443
+        transition: 2
+      light.keuken:
+        state: off
+      light.julian:
+        state: on
+        brightness: 30
+        color_temp: 443
+      light.dressoir:
+        state: on
+        brightness: 30
+        color_temp: 443
+  - name: when_its_getting_dark
+    entities:      
+      light.woonkamer:
+        state: on
+        brightness: 180
+        color_temp: 443
+        transition: 2
+      light.schemerlamp:
+        state: on
+        brightness: 180
+        color_temp: 443
+        transition: 2
+      light.keuken:
+        state: on
+        brightness: 180
+        color_temp: 443
+        transition: 2  
+      light.julian:
+        state: on
+        brightness: 100
+        color_temp: 443
+      light.dressoir:
+        state: on
+        brightness: 100
+        color_temp: 443

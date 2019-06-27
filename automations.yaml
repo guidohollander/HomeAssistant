@@ -1,0 +1,820 @@
+    # ---------------------------------------------------------------------------------------------------------------
+  - alias: Bedtijd Julian
+    initial_state: true  
+    trigger:
+      platform: time
+      at: '20:50:00'
+    condition:
+      condition: and
+      conditions:
+      - condition: time #avonden voor schooldag
+        weekday:
+          - sun
+          - mon
+          - tue
+          - wed
+          - thu
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.google_home
+        media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/08/Text-tone.mp3
+        media_content_type: audio/mp3
+    - delay: '00:00:02' #to give the chime some time to play before the google say is triggered
+    - service: tts.google_say
+      entity_id: media_player.google_home
+      data:
+        message: 'Julian, het is bedtijd'
+        language: 'nl'
+    - service: notify.livingroom_tv
+      data:
+        message: "Het is nu bedtijd voor Julian."
+    # ---------------------------------------------------------------------------------------------------------------
+  - alias: Bedtijd Jaimy
+    initial_state: true  
+    trigger:
+      platform: time
+      at: '20:30:00'
+    condition:
+      condition: and
+      conditions:
+      - condition: time #avonden voor schooldag
+        weekday:
+          - sun
+          - mon
+          - tue
+          - wed
+          - thu
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.google_home
+        media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/08/Text-tone.mp3
+        media_content_type: audio/mp3
+    - delay: '00:00:02' #to give the chime some time to play before the google say is triggered
+    - service: tts.google_say
+      entity_id: media_player.google_home
+      data:
+        message: 'Jaimy, het is bedtijd'
+        language: 'nl'
+    - service: notify.livingroom_tv
+      data:
+        message: "Het is nu bedtijd voor Jaimy."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Bedtijd Laurens
+    initial_state: true  
+    trigger:
+      platform: time
+      at: '20:15:00'
+    condition:
+      condition: and
+      conditions:
+      - condition: time #avonden voor schooldag
+        weekday:
+          - sun
+          - mon
+          - tue
+          - wed
+          - thu
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+      - condition: template
+        value_template: "{{ not states('media_player.squeezebox_laurens') in ['playing'] }}" # dan ligt hij nog niet in bed
+    action:
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.google_home
+        media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/08/Text-tone.mp3
+        media_content_type: audio/mp3
+    - delay: '00:00:02' #to give the chime some time to play before the google say is triggered
+    - service: tts.google_say
+      entity_id: media_player.google_home
+      data:
+        message: 'Laurens, het is bedtijd'
+        language: 'nl'
+    - service: notify.livingroom_tv
+      data:
+        message: "Het is nu bedtijd voor Laurens."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Google home decent volume
+    initial_state: true  
+    trigger:
+      platform: time_pattern
+      minutes: '/5'
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: sun.sun
+        state: 'above_horizon'
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+    - service: media_player.volume_set
+      data:
+        entity_id: media_player.google_home
+        volume_level: 0.4
+   # ---------------------------------------------------------------------------------------------------------------
+  - alias: 1. Turn on frontdoor light / sonos say when there is movement at frontdoor
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_voordeur
+        to: 'on'
+    condition:
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: sun.sun
+        state: 'below_horizon'
+    action:
+      # - service: light.turn_on
+      #   data:
+      #     entity_id: light.woonkamer
+      #     brightness: 255
+      #     flash: short    
+      - service: light.turn_on
+        data:
+          entity_id: light.voordeur
+          brightness: 255
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"      
+      - service: media_player.play_media
+        data:
+          entity_id: media_player.google_home
+          media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2018/03/Doorbell-tone-ding-dong.mp3
+          media_content_type: audio/mp3
+      - service: notify.livingroom_tv
+        data:
+          message: "Er is beweging gedetecteerd bij de voordeur. Aqara switch (rechts) voor cam feed."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 2. Turn off voordeur light 10 minutes after last movement
+    initial_state: true  
+    trigger:
+      platform: state
+      entity_id: binary_sensor.motionsensor_voordeur
+      to: 'off'
+      for:
+        minutes: 10
+    action:
+      service: homeassistant.turn_off
+      entity_id: light.voordeur
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: sOchtends, turn on wake-up enabled lights
+    initial_state: true  
+    trigger:
+      - platform: time
+        at: "07:15:00"
+    condition:
+      condition: and
+      conditions:
+      - condition: time #weekdagen
+        weekday:
+          - mon
+          - tue
+          - wed
+          - thu
+          - fri
+    action:
+      - service: light.turn_on        
+        entity_id: 
+          - light.keuken
+          - light.schemerlamp
+        data:
+          brightness: 255
+          transition: 900 #15 minutes
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: sAvonds, turn on woonkamer, keuken, achterkamer when lightlevel below ...
+    initial_state: true  
+    trigger:
+      - platform: sun
+        event: sunset
+        offset: "-02:00:00"
+    condition: #als we thuis zijn
+      condition: and
+      conditions:
+      - condition: state
+        entity_id: group.all_devices
+        state: home
+    action:
+      - service: scene.turn_on
+        entity_id: scene.when_its_getting_dark
+      - service: notify.livingroom_tv
+        data:
+          message: "Het wordt donker. Ik probeer verlichting in te schakelen."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Buitenverlichting turn on
+    initial_state: true  
+    trigger:
+      - platform: sun
+        event: sunset
+        offset: "-01:00:00"
+    action:
+      - service: homeassistant.turn_on
+        entity_id: light.buitenverlichting
+      - service: notify.livingroom_tv
+        data:
+          message: "Buitenverlichting ingeschakeld"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Buitenverlichting turn off
+    initial_state: true  
+    trigger:
+      platform: sun
+      event: sunrise
+      offset: "00:00:01"
+    action:
+      - service: homeassistant.turn_off
+        entity_id: light.buitenverlichting
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 3. Turn on electrische_deken_master
+    initial_state: false  
+    trigger:
+    - platform: time
+      at: '22:00:00'
+    condition: #als het koud buiten koud is
+      condition: and
+      conditions:
+      - condition: numeric_state
+        entity_id: weather.br_unknown_station
+        value_template: '{{ state.attributes.temperature }}'
+        below: 5
+    action:
+      - service: homeassistant.turn_on
+        entity_id: switch.electrische_deken_master
+      - service: notify.livingroom_tv
+        data:
+          message: "Het is 22:00. Het is onder 5 graden. Ik probeer de electrische deken (master) in te schakelen."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 4. Turn on switch.electrische_deken_julian
+    initial_state: false  
+    trigger:
+    - platform: time
+      at: '20:00:00'
+    condition: #als het koud buiten koud is
+      condition: and
+      conditions:
+      - condition: numeric_state
+        entity_id: weather.br_unknown_station
+        value_template: '{{ state.attributes.temperature }}'
+        below: 5
+    action:
+      - service: homeassistant.turn_on
+        entity_id: switch.electrische_deken_julian
+      - service: notify.livingroom_tv
+        data:
+          message: "Het is 20:00. Het is onder 5 graden. Ik probeer de electrische deken (julian) in te schakelen."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 5. Enable MQTT discovery for all devices
+    initial_state: true  
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+    - service: mqtt.publish
+      data:
+        topic: "cmnd/sonoffs/SetOption19"
+        payload: "1"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 6. "Power state on HA start-up"
+    initial_state: true  
+    trigger:
+      platform: homeassistant
+      event: start
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "sonoffs/cmnd/state"
+          payload: ""
+  # ---------------------------------------------------------------------------------------------------------------
+  - id: letsencrypt-renewal
+    alias: 'LetsEncrypt renewal'
+    trigger:
+    - platform: time
+      at: '00:00:00'
+    action:
+    - service: hassio.addon_stop
+      data:
+        addon: core_nginx_proxy
+    - service: hassio.addon_restart
+      data:
+        addon: core_letsencrypt
+    - delay: '00:01:30'
+    - service: hassio.addon_start
+      data:
+        addon: core_nginx_proxy        
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 7. toilet occupied
+    initial_state: true  
+    trigger:
+      platform: state
+      entity_id: switch.toilet
+      from: 'off'
+      to: 'on'
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+    - condition: and
+      conditions:
+        - condition: state
+          entity_id: sun.sun
+          state: 'above_horizon'
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.google_home
+        media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2018/02/Airplane-ding-dong.mp3
+        media_content_type: audio/mp3 
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 8. toilet free
+    initial_state: true  
+    trigger:
+      platform: state
+      entity_id: switch.toilet
+      from: 'on'
+      to: 'off'
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+    - service: media_player.play_media
+      data:
+        entity_id: media_player.google_home
+        media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/05/Airplane-ding-sound.mp3
+        media_content_type: audio/mp3
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: 9. ios notify
+    initial_state: false
+    hide_entity: true    
+    trigger:
+      platform: state
+      entity_id: binary_sensor.motionsensor_voordeur
+      from: 'off'
+      to: 'on'
+    action:
+    - service: notify.ios_guido
+      data:
+        title: "Notification"
+        message: "Notifdication message"
+        data:
+          push:
+            badge: 0
+            category: "TURN_ON_FRONTDOOR_LIGHT"
+  # ---------------------------------------------------------------------------------------------------------------
+  # - alias: sNachts, doe alle verlichting uit als de squeezebox uitgezet wordt
+  #   initial_state: true  
+  #   trigger:
+  #     - platform: state
+  #       entity_id: media_player.squeezebox_laurens
+  #       to: 'off'
+  #     - platform: state
+  #       entity_id: media_player.living_room_tv
+  #       to: 'off'
+  #   condition: #'snachts tussen 23 en 01 uur
+  #     condition: and
+  #     conditions:
+  #     - condition: time
+  #       after: '23:00:00'
+  #       before: '01:00:00'
+  #   action:
+  #     - service: homeassistant.turn_off
+  #       data:
+  #         entity_id: 
+  #           - group.all_lights
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: sNachts, bij beweging op oprit, eerst achterkamer en dan 5 seconden toilet
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_voordeur
+        to: 'on'
+    condition: #'snachts tussen 00:30 en 07 uur
+      condition: and
+      conditions:
+      - condition: time
+        after: '00:30:00'
+        before: '07:00:00'
+    action:
+      - service: homeassistant.turn_on
+        data:
+          entity_id: 
+            - light.julian
+            - light.dressoir
+      - delay: '00:00:15' #switch on wc light after 15 seconds
+      - service: homeassistant.turn_on
+        data:
+          entity_id: 
+            - light.toilet
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Holiday mode (sAvonds)
+    initial_state: 'on'
+    trigger:
+      - platform: sun
+        event: sunset
+        offset: '00:15:00'
+    condition:
+      - condition: state
+        entity_id: input_boolean.enable_occupancy_simulator
+        state: 'on'
+      - condition: template
+        value_template: "{{ is_state('device_tracker.guido','not_home') }}"
+    action:
+      - delay: '00:{{ range(10,40) | random | int }}:00'
+      - service: homeassistant.turn_on
+        data:    
+          entity_id: light.keuken
+          brightness: 255
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_on
+        data:    
+          entity_id: light.woonkamer
+          brightness: 255
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_off
+        data:    
+          entity_id: light.keuken
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_off
+        data:    
+          entity_id: light.woonkamer
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_on
+        data:    
+          entity_id: light.keuken
+          brightness: 255
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_off
+        data:    
+          entity_id: light.keuken
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Holiday mode (sNachts)
+    initial_state: 'on'
+    trigger:
+      - platform: time
+        at: '00:00:00'
+    condition:
+      - condition: state
+        entity_id: input_boolean.enable_occupancy_simulator
+        state: 'on'
+      - condition: template
+        value_template: "{{ is_state('device_tracker.guido','not_home') }}"
+    action:
+      - delay: '0{{ range(2) | random | int }}:{{ range(10,55) | random | int }}:00'
+      - service: homeassistant.turn_on
+        data:    
+          entity_id: light.julian
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_off
+        data:    
+          entity_id: light.julian
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_on
+        data:    
+          entity_id: light.julian
+      - delay: '00:0{{ range(9) | random | int }}:{{ range(10,58) | random | int }}'
+      - service: homeassistant.turn_off
+        data:    
+          entity_id: light.julian
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: "Netflix scene"
+    trigger:
+      - platform: state
+        entity_id: sensor.living_room_tv_source
+        to: 'Netflix'
+      - platform: state
+        entity_id: media_player.living_room_tv
+        from: 'idle'
+        to: 'playing'
+    condition:
+      - condition: numeric_state
+        entity_id: sun.sun
+        value_template: '{{ state.attributes.elevation }}'
+        below: 4
+    action:
+      - service: scene.turn_on
+        entity_id: scene.netflix
+      - service: notify.livingroom_tv
+        data:
+          message: "Netflix time"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: "Regular tv scene"
+    trigger:
+      - platform: state
+        entity_id: sensor.living_room_tv_source
+        to: HDMI1
+      - platform: state
+        entity_id: sensor.living_room_tv_source
+        to: HDMI3        
+      - platform: state
+        entity_id: media_player.living_room_tv
+        from: 'playing'
+        to: 'idle'
+    condition:
+      - condition: state
+        entity_id: sun.sun
+        state: 'below_horizon'
+    action:
+      - service: scene.turn_on
+        entity_id: scene.when_its_getting_dark
+
+
+
+
+
+
+
+
+
+
+
+          
+ # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_cube_tap
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_cube
+    condition:
+      condition: template
+      value_template: "{{ 'tap' == trigger.payload_json.action }}"
+    action:
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_cube_tap"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_cube_slide
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_cube
+    condition:
+      condition: template
+      value_template: "{{ 'slide' == trigger.payload_json.action }}"
+    action:
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_cube_slide"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_cube_flip_90
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_cube
+    condition:
+      condition: template
+      value_template: "{{ 'flip90' == trigger.payload_json.action }}"
+    action:
+      - service: notify.ios_guido
+        data:
+          title: "Notification"
+          message: "Notifdication message"
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_cube_flip_90"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_cube_rotate_left
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_cube
+    condition:
+      condition: template
+      value_template: "{{ 'rotate_left' == trigger.payload_json.action }}"
+    action:
+      - service: media_player.volume_down
+        entity_id: media_player.google_home
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_cube_rotate_left"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_cube_rotate_right
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_cube
+    condition:
+      condition: template
+      value_template: "{{ 'rotate_right' == trigger.payload_json.action }}"
+    action:
+      - service: media_player.volume_up
+        entity_id: media_player.google_home
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_cube_rotate_right"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_left
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: template
+      value_template: "{{ 'left' == trigger.payload_json.click }}"
+    action:
+      - service: homeassistant.toggle
+        entity_id: light.buitenverlichting
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_right, toggle source from HDMI1 to HDMI3
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ 'right' == trigger.payload_json.click }}"
+      - condition: template
+        value_template: "{{ states.media_player.living_room_tv.attributes['source'] == 'HDMI1'}}"
+    action:
+      - service: camera.play_stream
+        data:
+          entity_id: camera.dafang360
+          media_player: media_player.chromecast
+      - service: media_player.select_source
+        entity_id: media_player.living_room_tv
+        data:
+          source: HDMI3
+      - service: notify.livingroom_tv
+        data:
+          message: "Dafang 360 camera feed"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_right, toggle source from HDMI3 to HDMI1
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ 'right' == trigger.payload_json.click }}"
+      - condition: template
+        value_template: "{{ states.media_player.living_room_tv.attributes['source'] == 'HDMI3'}}"
+    action:
+      - service: media_player.select_source
+        entity_id: media_player.living_room_tv
+        data:
+          source: HDMI1
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_both
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ 'both' == trigger.payload_json.click }}"
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+      - service: media_player.play_media
+        data:
+          entity_id: media_player.google_home
+          media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/08/Text-tone.mp3
+          media_content_type: audio/mp3
+      - service: tts.google_say
+        entity_id: media_player.sonos
+        data:
+          message: 'Niet op deze knop drukken'
+          language: 'nl'
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_switch_both"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_both_long
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: and
+      conditions:
+      - condition: template
+        value_template: "{{ 'both_long' == trigger.payload_json.click }}"
+      - condition: template
+        value_template: "{{ not states('media_player.google_home') in ['playing'] }}"
+    action:
+      # - service: notify.ios_guido
+      #   data:
+      #     title: "Automations"
+      #     message: "trigger: Aqara_switch both double, action: restart ha"
+      #     data:
+      #       push:
+      #         badge: 5
+      #- service: homeassistant.restart
+      - service: automation.reload
+      - service: media_player.play_media
+        data:
+          entity_id: media_player.google_home
+          media_content_id: http://www.orangefreesounds.com/wp-content/uploads/2015/08/Text-tone.mp3
+          media_content_type: audio/mp3
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_switch_both_long"
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_double_left -> scene.netflix 
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: template
+      value_template: "{{ 'left_double' == trigger.payload_json.click }}"
+    action:
+      - service: scene.turn_on
+        entity_id: scene.netflix  
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_switch_double_left. Enabling netflix scene."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Aqara_switch_double_right
+    initial_state: true  
+    trigger:
+      platform: mqtt
+      topic: zigbee2mqtt/Aqara_switch
+    condition:
+      condition: template
+      value_template: "{{ 'right_double' == trigger.payload_json.click }}"
+    action:
+      - service: scene.turn_on
+        entity_id: scene.when_its_getting_dark
+      - service: notify.livingroom_tv
+        data:
+          message: "Aqara_switch_double_right. Enabling when_its_getting_dark scene."
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Motion in toilet
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_toilet
+        to: 'on'
+    action:
+      - service: homeassistant.turn_on
+        entity_id: light.toilet
+    # ---------------------------------------------------------------------------------------------------------------
+  - alias: No motion in toilet
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_toilet
+        to: 'off'
+        for:
+          minutes: 5
+    action:
+      service: homeassistant.turn_off
+      entity_id: light.toilet
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Motion in garage
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_garage
+        to: 'on'
+    action:
+      - service: homeassistant.turn_on
+        entity_id: light.garage
+    # ---------------------------------------------------------------------------------------------------------------
+  - alias: No motion in garage
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_garage
+        to: 'off'
+        for:
+          minutes: 2
+    action:
+      service: homeassistant.turn_off
+      entity_id: light.garage
+
+  # ---------------------------------------------------------------------------------------------------------------
+  - alias: Motion in waskamer
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_waskamer
+        to: 'on'
+    action:
+      - service: homeassistant.turn_on
+        entity_id: light.waskamer
+    # ---------------------------------------------------------------------------------------------------------------
+  - alias: No motion in waskamer
+    initial_state: true  
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.motionsensor_waskamer
+        to: 'off'
+        for:
+          minutes: 2
+    action:
+      service: homeassistant.turn_off
+      entity_id: light.waskamer

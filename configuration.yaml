@@ -1,0 +1,252 @@
+homeassistant:
+  # Name of the location where Home Assistant is running
+  name: Home
+  # Location required to calculate the time the sun rises and sets
+  latitude: !secret homeassistant_latitude
+  longitude: !secret homeassistant_longitude
+  # Impacts weather/sunrise data (altitude above sea level in meters)
+  elevation: 0
+  # metric for Metric, imperial for Imperial
+  unit_system: metric
+  # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  time_zone: Europe/Amsterdam
+
+ssdp:
+zeroconf:
+
+# Enables the frontend
+frontend:
+  javascript_version: latest
+
+# lovelace:
+#   mode: yaml
+
+zwave:
+  usb_path: /dev/serial/by-id/usb-0658_0200-if00
+
+logger:
+  default: info
+  
+media_player:
+  - platform: webostv
+    host: !secret ip_webostv
+    name: Living Room TV
+    filename: webostv.conf
+    timeout: 5
+    turn_on_action:
+          service: wake_on_lan.send_magic_packet
+          data:
+            mac: !secret mac_webostv
+
+    customize:
+      sources:
+        - HDMI1
+        - HDMI3
+        - Netflix
+
+notify:
+  - platform: webostv
+    host: !secret ip_webostv
+    name: livingroom_tv
+
+#switches 2 lights config
+light:
+  - platform: switch
+    name: toilet
+    entity_id: switch.toilet
+  - platform: switch
+    name: kerstboom
+    entity_id: switch.kerstboom
+  - platform: switch
+    name: buitenverlichting
+    entity_id: switch.buitenverlichting 
+  - platform: switch
+    name: garage
+    entity_id: switch.sonoffgarage
+  - platform: switch
+    name: waskamer
+    entity_id: switch.sonofflaundryroom
+
+# Enables configuration UI
+config:
+
+http:
+  base_url: !secret baseurl
+
+# Checks for available updates
+# Note: This component will send some information about your system to
+# the developers to assist with development of Home Assistant.
+# For more information, please see:
+# https://home-assistant.io/blog/2016/10/25/explaining-the-updater/
+updater:
+  # Optional, allows Home Assistant developers to focus on popular components.
+  # include_used_components: true
+
+# Discover some devices automatically
+discovery:
+
+tado:
+  username: !secret tado_username
+  password: !secret tado_password
+
+device_tracker:
+  - platform: tado
+    username: !secret tado_username
+    password: !secret tado_password
+    home_id: tado_home_id
+    
+hue:
+  bridges:
+    - host: !secret ip_hue
+      allow_hue_groups: false
+      allow_unreachable: false
+
+ios:
+  push:
+    categories:
+      - name: movement_on_dafang360
+        identifier: 'dafang360'
+        actions:
+          - identifier: 'TURN_ON_FRONTDOOR_LIGHT'
+            title: 'Voordeur lamp aan vanwege beweging'
+
+# Allows you to issue voice commands from the frontend in enabled browsers
+conversation:
+
+# Enables support for tracking state changes over time
+#history:
+
+# View all events in a logbook
+#logbook:
+
+# Enables a map showing the location of tracked devices
+map:
+
+owntracks:
+  max_gps_accuracy: 100
+  
+# Track the sun
+sun:
+
+weather:
+  - platform: darksky
+    api_key: !secret api_key_darksky
+  - platform: buienradar
+
+# Sensors
+
+binary_sensor:
+  - platform: ping
+    name: hollandernas
+    host: !secret ip_nas
+  - platform: ping
+    name: homeassistant
+    host: !secret ip_homeassistant_external
+
+    
+
+
+sensor:
+  - platform: yr
+  - platform: time_date
+    display_options:
+      - 'time'
+      - 'date'
+      - 'date_time'
+      - 'time_date'
+      - 'time_utc'
+      - 'beat'
+  - platform: mqtt
+    name: Bridge state
+    state_topic: "zigbee2mqtt/bridge/state"
+    icon: mdi:router-wireless
+  - platform: template
+    sensors:
+      living_room_tv_source:
+        value_template: '{{ states.media_player.living_room_tv.attributes["source"] }}'
+        friendly_name: 'living room TV source'
+      living_room_tv_display:
+        value_template: "{% if state_attr('media_player.living_room_tv','entity_picture') == None %}Off{% else %}On{% endif %}"
+        friendly_name: 'living room TV display'
+      living_room_tv_power:
+        value_template: "{% if is_state('media_player.living_room_tv','playing') %}Awake{% else %}Deep sleep{% endif %}"
+        friendly_name: 'living room TV power'
+  - platform: buienradar
+    timeframe: 5
+    monitored_conditions:
+      - condition
+      - conditiondetailed
+      - conditionexact
+      - symbol
+      - humidity
+      - temperature
+      - groundtemperature
+      - windspeed
+      - winddirection
+      - pressure
+      - precipitation
+      - precipitation_forecast_average
+      - precipitation_forecast_total
+
+# Text to speech
+tts:
+  - platform: google_translate
+    service_name: google_say    
+    base_url: !secret google_translate_base_url 
+
+# Cloud
+cloud:
+
+mqtt:
+  broker: !secret ip_mqtt
+  username: !secret username_mqtt
+  password: !secret password_mqtt
+  discovery: true
+  discovery_prefix: homeassistant
+  birth_message:
+    topic: 'hass/status'
+    payload: 'online'
+  will_message:
+    topic: 'hass/status'
+    payload: 'offline'
+
+system_health:
+
+stream:
+
+camera:
+  - platform: generic
+    name: dafang360
+    still_image_url: !secret dafang360_still_image_url
+    stream_source: !secret dafang360_stream_source
+    verify_ssl: false
+  - platform: generic
+    name: xiaofang
+    still_image_url: !secret xiaofang360_still_image_url
+    stream_source: !secret: xiaofang_stream_source
+    verify_ssl: false
+
+input_boolean:
+  zigbee_permit_join:
+    name: Allow devices to join
+    initial: on
+    icon: mdi:cellphone-wireless
+  enable_occupancy_simulator:
+    name: Holiday mode
+
+timer:
+  zigbee_permit_join:
+    name: Time remaining
+    duration: 600 # Updated this to the number of seconds you wish
+
+panel_iframe:
+  tasmoadmin:
+    title: TasmoAdmin
+    icon: mdi:lightbulb-on
+    url: !secret tasmoadmin_url
+
+group: !include groups.yaml
+automation: !include automations.yaml
+scene: !include scenes.yaml
+script: !include scripts.yaml
+zone: !include zones.yaml

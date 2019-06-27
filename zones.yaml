@@ -1,0 +1,37 @@
+  # https://www.mapdevelopers.com/draw-circle-tool.php
+
+  - name: Home
+    latitude: !secret homeassistant_latitude
+    longitude: !secret homeassistant_longitude
+    radius: 100
+    icon: mdi:home
+
+  - name: Guido werk
+    latitude: !secret guido_work_latitude
+    longitude: !secret guido_work_longitude
+    radius: 250
+    icon: mdi:worker
+
+  - name: Krista werk
+    latitude: !secret krista_work_latitude
+    longitude: !secret krista_work_longitude
+    radius: 250
+    icon: mdi:school
+
+  - name: Julian school
+    latitude: !secret julian_school_latitude
+    longitude: !secret julian_school_longitude
+    radius: 250
+    icon: mdi:school
+
+  - name: Jaimy school
+    latitude: !secret jaimy_school_latitude
+    longitude: !secret jaimy_school_longitude
+    radius: 250
+    icon: mdi:school
+
+  - name: Laurens school
+    latitude: !secret laurens_school_latitude
+    longitude: !secret laurens_school_longitude
+    radius: 250
+    icon: mdi:school
